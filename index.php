@@ -2,16 +2,19 @@
 include "config.php"; // Database configuration
 session_start();
 
+// Check if the user is logged in, and redirect to login page if not
+
+
 // Handle form submissions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['create'])) {
+    if (isset($_POST['create']) && $_SESSION['role'] == 'admin') {
         $name = $_POST['name'];
         $description = $_POST['description'];
         $stmt = $conn->prepare("INSERT INTO posts (title, content) VALUES (?, ?)");
         $stmt->bind_param("ss", $name, $description);
         $stmt->execute();
         $stmt->close();
-    } elseif (isset($_POST['update'])) {
+    } elseif (isset($_POST['update']) && ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'editor')) {
         $id = $_POST['id'];
         $name = $_POST['name'];
         $description = $_POST['description'];
@@ -19,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_param("ssi", $name, $description, $id);
         $stmt->execute();
         $stmt->close();
-    } elseif (isset($_POST['delete'])) {
+    } elseif (isset($_POST['delete']) && $_SESSION['role'] == 'admin') {
         $id = $_POST['id'];
         $stmt = $conn->prepare("DELETE FROM posts WHERE id = ?");
         $stmt->bind_param("i", $id);
@@ -72,26 +75,37 @@ $conn->close();
         <h2 class="mb-4">CRUD Blog Application</h2>
         <button class="btn btn-primary" onclick="window.location.href='logout.php'"><i class="bi bi-box-arrow-right"></i> Logout</button>
     </div>
+    <?php
+    $role = $_SESSION['role'];
+    $username = $_SESSION['username'];
+    
+    echo "<div class='welcome-message'>";
+    if ($role == 'admin') {
+        echo "<h4>Welcome, Admin $username!</h4>";
+    } elseif ($role == 'editor') {
+        echo "<h4>Welcome, Editor $username!</h4>";
+    }
+    echo "</div>";
+    ?>
 
     <!-- Search Form -->
-     <div class="d-flex justify-content-between">
-    <button class="btn btn-primary mb-3 ml-2" onclick="window.location.href='add_post.php'"><i class="bi bi-file-earmark-plus"></i> Create Post</button>
-    <form method="GET" action="">
-
-    <div class="input-group mb-3" style="max-width: 300px;">
-        <input type="text" class="form-control" placeholder="Search posts" name="search" value="<?php echo $_GET['search'] ?? ''; ?>">
-        <div class="input-group-append">
-            <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
-        </div>
+    <div class="d-flex justify-content-end">
+        <?php if ($_SESSION['role'] == 'admin'): ?>
+            <button class="btn btn-primary mb-3 ml-2" onclick="window.location.href='add_post.php'"><i class="bi bi-file-earmark-plus"></i> Create Post</button>
+        <?php endif; ?>
+        <form method="GET" action="">
+            <div class="input-group mb-3 ml-4" style="max-width: 300px;">
+                <input type="text" class="form-control" placeholder="Search Posts" name="search" value="<?php echo $_GET['search'] ?? ''; ?>">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-primary" type="submit"><i class="bi bi-search"></i></button>
+                </div>
+            </div>
+        </form>
     </div>
-</form>
-</div>
-
 
     <!-- Posts Table -->
     <div class="col-md-12">
         <div class="card">
-            
             <div class="card-body">
                 <table class="table table-striped">
                     <thead>
@@ -111,13 +125,17 @@ $conn->close();
                             <td><?php echo $row['content']; ?></td>
                             <td><?php echo $row['created_at']; ?></td>
                             <td>
-                                <button class="btn btn-info btn-sm" onclick="editDetails('<?php echo $row['id']; ?>', '<?php echo $row['title']; ?>', '<?php echo $row['content']; ?>')">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                                <form action="" method="post" style="display:inline-block;">
-                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                    <button type="submit" name="delete" class="btn btn-danger btn-sm"><i class="bi bi-trash3"></i></button>
-                                </form>
+                                <?php if ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'editor'): ?>
+                                    <button class="btn btn-primary btn-sm" onclick="editDetails('<?php echo $row['id']; ?>', '<?php echo $row['title']; ?>', '<?php echo $row['content']; ?>')">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($_SESSION['role'] == 'admin'): ?>
+                                    <form action="" method="post" style="display:inline-block;">
+                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                        <button type="submit" name="delete" class="btn btn-danger btn-sm"><i class="bi bi-trash3"></i></button>
+                                    </form>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endwhile; ?>

@@ -1,39 +1,37 @@
 <?php 
-    //include config file
     include 'config.php';
 
- 
- if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $user = $_POST['username'];
-    $pass = $_POST['password'];
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $user = $_POST['username'];
+        $pass = $_POST['password'];
 
-    // Retrieve the hashed password from the database
-    $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
-    $stmt->bind_param("s", $user);
-    $stmt->execute();
-    $stmt->store_result();
+        // Fetch password and role
+        $stmt = $conn->prepare("SELECT password, role FROM users WHERE username = ?");
+        $stmt->bind_param("s", $user);
+        $stmt->execute();
+        $stmt->store_result();
 
-    if ($stmt->num_rows > 0) {
-        $stmt->bind_result($hashedPassword);
-        $stmt->fetch();
+        if ($stmt->num_rows > 0) {
+            $stmt->bind_result($hashedPassword, $role);
+            $stmt->fetch();
 
-        // Verify the password
-        if (password_verify($pass, $hashedPassword)) {
-            header("Location: index.php");
-            // Start session and store user information
-            session_start();
-            $_SESSION['username'] = $user;
+            // Verify password
+            if (password_verify($pass, $hashedPassword)) {
+                session_start();
+                $_SESSION['username'] = $user;
+                $_SESSION['role'] = $role; // Save role in session
+                header("Location: index.php");
+            } else {
+                echo "Invalid username or password.";
+            }
         } else {
             echo "Invalid username or password.";
         }
-    } else {
-        echo "Invalid username or password.";
+
+        $stmt->close();
     }
 
-    $stmt->close();
-}
-
-$conn->close();
+    $conn->close();
 ?>
 <html lang="en">
 <head>

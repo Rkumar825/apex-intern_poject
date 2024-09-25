@@ -2,29 +2,26 @@
 include "config.php";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get the username and password from the form
     $username = $_POST['username'];
     $password = $_POST['password'];
+    $role = $_POST['role']; // Get the role from the form
 
-    // Hash the password for security
+    // Hash the password
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-    // Prepare and bind
-    $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-    $stmt->bind_param("ss", $username, $hashed_password);
+    // Insert the new user with their role
+    $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, $hashed_password, $role);
 
-    // Execute the query
     if ($stmt->execute()) {
         echo "Registration successful!";
     } else {
         echo "Error: " . $stmt->error;
     }
 
-    // Close the statement
     $stmt->close();
 }
 
-// Close the connection
 $conn->close();
 ?>
 <!DOCTYPE html>
@@ -72,6 +69,15 @@ $conn->close();
                         <div class="mb-3 mx-4">
                             <label for="password" class="form-label">Password:</label>
                             <input type="password" class="form-control form-control-custom" id="password" name="password" placeholder="Enter Your Password" required>
+                        </div>
+                        <div class="mb-3 mx-4">
+                            <label for="role" class="form-label">Role:</label>
+                            <select id="role" name="role" class="form-control form-control-custom">
+                                <option value="">Select Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="editor">Editor</option>
+
+                            </select>
                         </div>
                         <div class="mx-5 mt-4 text-center">
                             <button class="btn btn-custom w-100 text-white" id="register" name="register" type="submit">Register</button>
