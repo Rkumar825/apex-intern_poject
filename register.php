@@ -83,7 +83,7 @@ $conn->close();
                             <button class="btn btn-custom w-100 text-white" id="register" name="register" type="submit">Register</button>
                         </div>
                         <div class="mx-2 mt-4 text-center text-dark">
-                            <p>Already have an account? <a class="text-custom" href="login.php">Login Here</a></p>
+                            <p>Already have an account? <a class="text-custom" href="login.html">Login Here</a></p>
                         </div>
                     </div>
                 </form>
